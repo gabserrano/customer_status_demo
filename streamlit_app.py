@@ -1,57 +1,66 @@
 import streamlit as st
 import pandas as pd
 
-# Título del dashboard
-st.title('SAP Customer status')
-
-# Encabezado
-st.header('Customer status')
-
-# Logotipo de SAP
-st.image('https://upload.wikimedia.org/wikipedia/commons/5/59/SAP_2011_logo.svg', width=200)
-
-# Solicitar la ruta al fichero Excel de datos del cliente
-uploaded_file = st.file_uploader('Por favor, sube el fichero Excel de datos del cliente:', type=['xlsx', 'xls'])
-
-# Validar si se ha proporcionado un fichero
-if uploaded_file:
+# Función para cargar el archivo Excel y validar las hojas
+def load_excel(file):
     try:
-        # Leer el fichero Excel
-        df = pd.read_excel(uploaded_file)
-
-        # Mostrar los datos del cliente
-        customer_name = df['Customer name'][0]
-        logo_url = df['Logotipo'][0]
-        acv = df['ACV'][0]
-        tsm = df['TSM'][0]
-        cdm = df['CDM'][0]
-        csp = df['CSP'][0]
-        region = df['Region'][0]
-        classification = df['Clasification'][0]
-        last_csat = df['Last CSAT'][0]
-
-        st.subheader(f'Customer name: {customer_name}')
-        st.image(logo_url, width=200)
-        st.write(f'ACV: {acv} euros')
-        st.write(f'TSM: {tsm}')
-        st.write(f'CDM: {cdm}')
-        st.write(f'CSP: {csp}')
-        st.write(f'Region: {region}')
-        st.write(f'Clasification: {classification}')
-
-        # Mostrar el Last CSAT con el color correspondiente
-        if last_csat >= 0 and last_csat < 3:
-            csat_color = 'red'
-        elif last_csat >= 3 and last_csat < 4:
-            csat_color = 'orange'
-        elif last_csat >= 4 and last_csat <= 5:
-            csat_color = 'green'
+        xls = pd.ExcelFile(file)
+        required_sheets = ['customer_data', 'timeline', 'change_request', 'work_at_risk']
+        if all(sheet in xls.sheet_names for sheet in required_sheets):
+            return xls
         else:
-            csat_color = 'black'
-
-        st.markdown(f'<p style="color:{csat_color};">Last CSAT: {last_csat}</p>', unsafe_allow_html=True)
-
+            st.error("El archivo Excel debe contener las hojas: customer_data, timeline, change_request, work_at_risk.")
+            return None
     except Exception as e:
-        st.error(f'Error al leer el fichero Excel: {e}')
-else:
-    st.warning('Por favor, sube el fichero Excel de datos del cliente.')
+        st.error(f"Error al cargar el archivo Excel: {e}")
+        return None
+
+# Función para obtener los datos del cliente
+def get_customer_data(xls):
+    df = pd.read_excel(xls, sheet_name='customer_data')
+    customer_info = df.iloc[0]  # Asumiendo que la primera fila contiene los datos requeridos
+    return customer_info
+
+# Configuración de la aplicación Streamlit
+st.set_page_config(page_title="SAP Customer Dashboard", layout="wide")
+
+# Barra lateral para la navegación
+st.sidebar.title("Navegación")
+page = st.sidebar.radio("Ir a", ["Status", "Customer Incidents"])
+
+if page == "Status":
+    st.title("SAP Customer status")
+    st.markdown("<h1 style='color: lightblue;'>Customer status</h1>", unsafe_allow_html=True)
+    st.image("https://upload.wikimedia.org/wikipedia/commons/5/59/SAP_2011_logo.svg", width=200)
+
+    # Cargador de archivos
+    uploaded_file = st.file_uploader("Por favor, selecciona el archivo Excel de datos del cliente:", type=["xlsx"])
+
+    if uploaded_file:
+        xls = load_excel(uploaded_file)
+        if xls:
+            customer_info = get_customer_data(xls)
+            
+            st.subheader("Datos del Cliente")
+            st.write(f"Customer name: {customer_info['Customer name']}")
+            st.write(f"Account Status: {customer_info['Account Status']}")
+            st.write(f"Phase: {customer_info['Phase']}")
+            st.write(f"Contract Type: {customer_info['Contract Type']}")
+            st.image(customer_info['Logotipo'], width=100)
+            st.write(f"ACV: {customer_info['ACV']} euros")
+            st.write(f"Región: {customer_info['Región']}")
+            st.write(f"Clasification: {customer_info['Clasification']}")
+
+            csat = customer_info['Last CSAT']
+            csat_color = "red" if csat < 3 else "orange" if csat < 4 else "green"
+            st.markdown(f"<p style='color: {csat_color};'>Last CSAT: {csat}</p>", unsafe_allow_html=True)
+
+            st.subheader("SAP Team")
+            st.write(f"TSM: {customer_info['TSM']}")
+            st.write(f"CDM: {customer_info['CDM']}")
+            st.write(f"CSP: {customer_info['CSP']}")
+            st.write(f"PL: {customer_info['PL']}")
+
+elif page == "Customer Incidents":
+    st.title("Customer Incidents")
+    # Aquí puedes añadir el contenido para la página de incidentes del cliente
