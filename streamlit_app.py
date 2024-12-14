@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # Función para cargar el archivo Excel y validar las hojas
 def load_excel(file):
@@ -20,6 +21,11 @@ def get_customer_data(xls):
     df = pd.read_excel(xls, sheet_name='customer_data')
     customer_info = df.iloc[0]  # Asumiendo que la primera fila contiene los datos requeridos
     return customer_info
+
+# Función para obtener los datos de la línea de tiempo
+def get_timeline_data(xls):
+    df = pd.read_excel(xls, sheet_name='timeline')
+    return df
 
 # Configuración de la aplicación Streamlit
 st.set_page_config(page_title="SAP Customer Dashboard", layout="wide")
@@ -60,6 +66,16 @@ if page == "Status":
             st.write(f"CDM: {customer_info['CDM']}")
             st.write(f"CSP: {customer_info['CSP']}")
             st.write(f"PL: {customer_info['PL']}")
+
+            # Sección de la línea de tiempo
+            timeline_data = get_timeline_data(xls)
+            st.subheader("Timeline")
+            fig, ax = plt.subplots()
+            ax.plot(timeline_data['Date'], timeline_data['Event'], marker='o')
+            ax.set_xlabel('Date')
+            ax.set_ylabel('Event')
+            plt.xticks(rotation=45)
+            st.pyplot(fig)
 
 elif page == "Customer Incidents":
     st.title("Customer Incidents")
