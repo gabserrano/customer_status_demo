@@ -1,20 +1,6 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-from streamlit_timeline import st_timeline
-
-items = [
-    {"id": 1, "content": "2022-10-20", "start": "2022-10-20"},
-    {"id": 2, "content": "2022-10-09", "start": "2022-10-09"},
-    {"id": 3, "content": "2022-10-18", "start": "2022-10-18"},
-    {"id": 4, "content": "2022-10-16", "start": "2022-10-16"},
-    {"id": 5, "content": "2022-10-25", "start": "2022-10-25"},
-    {"id": 6, "content": "2022-10-27", "start": "2022-10-27"},
-]
-
-timeline = st_timeline(items, groups=[], options={}, height="300px")
-st.subheader("Selected item")
-st.write(timeline)
+import plotly.express as px
 
 # Función para cargar el archivo Excel y validar las hojas
 def load_excel(file):
@@ -52,8 +38,8 @@ def load_service_requests(file):
         df = pd.read_excel(file)
         required_columns = ['customer', 'date', 'template', 'status']
         if all(column in df.columns for column in required_columns):
-            # Convertir la columna 'date' a tipo datetime
-            df['date'] = pd.to_datetime(df['date'])
+            # Convertir la columna 'date' a tipo datetime con formato día/mes/año
+            df['date'] = pd.to_datetime(df['date'], format='%d/%m/%Y', errors='coerce')
             return df
         else:
             st.error("El archivo Excel debe contener las columnas: customer, date, template, status.")
@@ -122,25 +108,23 @@ if page == "Status":
             with col4:
                 st.write(f"**PL:** {customer_info['PL']}")
 
-            # Sección de la Línea de Tiempo
+            # Sección de la Línea de Tiempo usando Plotly
             timeline_data = get_timeline_data(xls)
             st.subheader("Timeline")
-            fig, ax = plt.subplots()
-            ax.plot(timeline_data['Date'], timeline_data['Event'], marker='o')
-            ax.set_xlabel('Date')
-            ax.set_ylabel('Event')
-            plt.xticks(rotation=45)
-            st.pyplot(fig)
+            
+            fig_timeline = px.line(timeline_data, x='Date', y='Event', markers=True, title='Timeline')
+            fig_timeline.update_layout(xaxis_title='Date', yaxis_title='Event')
+            
+            st.plotly_chart(fig_timeline)
 
-            # Sección de CSAT Histórico
+            # Sección de CSAT Histórico usando Plotly
             csat_data = get_csat_data(xls)
             st.subheader("Historical CSAT")
             
-            # Crear gráfico de dispersión usando st.scatter_chart
-            csat_chart_data = csat_data.set_index('date')[['value']]
+            fig_csat = px.scatter(csat_data, x='date', y='value', title='Historical CSAT')
+            fig_csat.update_layout(yaxis_range=[0, 5])
             
-            # Mostrar gráfico en Streamlit con escala entre 0 y 5 en el eje y
-            st.scatter_chart(csat_chart_data)
+            st.plotly_chart(fig_csat)
 
 elif page == "Service Requests":
     st.title("Service Requests")
@@ -156,16 +140,29 @@ elif page == "Service Requests":
             st.subheader("Tabla de Solicitudes de Servicio")
             st.dataframe(service_requests_data)
 
-            # Crear gráfico de solicitudes por mes
+            # Crear gráficos comparativos usando Streamlit's bar_chart
+            
+            # Gráfico comparativo entre clientes
+            service_requests_by_customer = service_requests_data.groupby('customer').size().reset_index(name='count')
+            st.subheader("Comparativa entre Clientes")
+            st.bar_chart(service_requests_by_customer.set_index('customer'))
+
+            # Gráfico comparativo por mes
             service_requests_by_month = service_requests_data.groupby(service_requests_data['date'].dt.to_period('M')).size().reset_index(name='count')
-            
-            fig, ax = plt.subplots()
-            ax.bar(service_requests_by_month['date'].astype(str), service_requests_by_month['count'], color='skyblue')
-            
-            ax.set_xlabel('Mes')
-            ax.set_ylabel('Número de Solicitudes')
-            
-            plt.xticks(rotation=45)
-            
-            # Mostrar gráfico en Streamlit
-            st.pyplot(fig)
+            st.subheader("Comparativa por Mes")
+            st.bar_chart(service_requests_by_month.set_index('date'))
+
+            # Gráfico comparativo por estado
+            service_requests_by_status = service_requests_data.groupby('status').size().reset_index(name='count')
+            st.subheader("Comparativa por Estado")
+            st.bar_chart(service_requests_by_status.set_index('status'))
+
+            # Gráfico comparativo por plantilla
+            service_requests_by_template = service_requests_data.groupby('template').size().reset_index(name='count')
+            st.subheader("Comparativa por Plantilla")
+            st.bar_chart(service_requests_by_template.set_index('template'))
+
+            # Gráfico comparativo por cliente y mes
+            service_requests_by_customer_month = service_requests_data.groupby([service_requests_data['date'].dt.to_period('M'), 'customer']).size().unstack().fillna(0)
+            st.subheader("Comparativa por Cliente y Mes")
+            st.bar_chart(service_requests_by_customer_month)
