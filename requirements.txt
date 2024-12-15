@@ -3,3 +3,4 @@ pandas
 numpy
 openpyxl
 plotly
+streamlit-vis-timeline>0.2.0
