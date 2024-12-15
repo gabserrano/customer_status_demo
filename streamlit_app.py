@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
 # Función para cargar el archivo Excel y validar las hojas
 def load_excel(file):
     try:
