@@ -49,7 +49,16 @@ if page == "Status":
             
             st.subheader("Datos del Cliente")
             st.write(f"Customer name: {customer_info['Customer name']}")
-            st.write(f"Account Status: {customer_info['Account Status']}")
+            st.write(f"Account Status: ")
+            # Indicador de estado de la cuenta
+            status = customer_info['Account Status']
+            if status == "Green":
+                st.markdown("<div style='width: 20px; height: 20px; background-color: green; border-radius: 50%;'></div>", unsafe_allow_html=True)
+            elif status == "Orange":
+                st.markdown("<div style='width: 20px; height: 20px; background-color: orange; border-radius: 50%;'></div>", unsafe_allow_html=True)
+            elif status == "Red":
+                st.markdown("<div style='width: 20px; height: 20px; background-color: red; border-radius: 50%;'></div>", unsafe_allow_html=True)
+                
             st.write(f"Phase: {customer_info['Phase']}")
             st.write(f"Contract Type: {customer_info['Contract Type']}")
             st.image(customer_info['Logotipo'], width=100)
