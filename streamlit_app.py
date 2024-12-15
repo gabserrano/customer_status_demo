@@ -140,29 +140,25 @@ elif page == "Service Requests":
             st.subheader("Tabla de Solicitudes de Servicio")
             st.dataframe(service_requests_data)
 
-            # Crear gráficos comparativos usando Streamlit's bar_chart
-            
-            # Gráfico comparativo entre clientes
+            # Gráfico comparativo entre clientes usando bar_chart
             service_requests_by_customer = service_requests_data.groupby('customer').size().reset_index(name='count')
             st.subheader("Comparativa entre Clientes")
             st.bar_chart(service_requests_by_customer.set_index('customer'))
 
-            # Gráfico comparativo por mes
-            service_requests_by_month = service_requests_data.groupby(service_requests_data['date'].dt.to_period('M')).size().reset_index(name='count')
-            st.subheader("Comparativa por Mes")
-            st.bar_chart(service_requests_by_month.set_index('date'))
 
-            # Gráfico comparativo por estado
+            # Gráfico comparativo por estado usando gráfico de pastel
             service_requests_by_status = service_requests_data.groupby('status').size().reset_index(name='count')
             st.subheader("Comparativa por Estado")
-            st.bar_chart(service_requests_by_status.set_index('status'))
+            fig_status = px.pie(service_requests_by_status, names='status', values='count', title='Distribución por Estado')
+            st.plotly_chart(fig_status)
 
-            # Gráfico comparativo por plantilla
+            # Gráfico comparativo por plantilla usando gráfico de pastel
             service_requests_by_template = service_requests_data.groupby('template').size().reset_index(name='count')
             st.subheader("Comparativa por Plantilla")
-            st.bar_chart(service_requests_by_template.set_index('template'))
+            fig_template = px.pie(service_requests_by_template, names='template', values='count', title='Distribución por Plantilla')
+            st.plotly_chart(fig_template)
 
-            # Gráfico comparativo por cliente y mes
-            service_requests_by_customer_month = service_requests_data.groupby([service_requests_data['date'].dt.to_period('M'), 'customer']).size().unstack().fillna(0)
-            st.subheader("Comparativa por Cliente y Mes")
-            st.bar_chart(service_requests_by_customer_month)
+            # Gráfico comparativo día a día y agrupado por clientes usando bar_chart
+            service_requests_by_day_customer = service_requests_data.groupby([service_requests_data['date'].dt.date, 'customer']).size().unstack().fillna(0)
+            st.subheader("Comparativa por Día y Cliente")
+            st.bar_chart(service_requests_by_day_customer)
