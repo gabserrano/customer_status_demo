@@ -55,7 +55,7 @@ if page == "Status":
             st.image(customer_info['Logotipo'], width=100)
             st.write(f"ACV: {customer_info['ACV']} euros")
             st.write(f"Región: {customer_info['Región']}")
-            st.write(f"Clasification: {customer_info['Clasification']}")
+            st.write(f"Classification: {customer_info['Classification']}")
 
             csat = customer_info['Last CSAT']
             csat_color = "red" if csat < 3 else "orange" if csat < 4 else "green"
