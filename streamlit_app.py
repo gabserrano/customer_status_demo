@@ -96,14 +96,14 @@ if page == "Status":
             csat_color = "red" if csat < 3 else "orange" if csat < 4 else "green"
             st.markdown(f"<p style='color: {csat_color};'>**Last CSAT:** {csat}</p>", unsafe_allow_html=True)
             
-            # Sección del Mapa usando lat y long del customer info
+           # Sección del Mapa usando lat y long del customer info con zoom=2
             if 'lat' in customer_info and 'long' in customer_info:
                 try:
                     lat = float(customer_info['lat'])
                     lon = float(customer_info['long'])
                     map_data = pd.DataFrame({'lat': [lat], 'lon': [lon]})
                     st.subheader("Customer Location")
-                    st.map(map_data)
+                    st.map(map_data, zoom=4)
                 except ValueError:
                     st.error("Las coordenadas lat y long deben ser números válidos.")
                     
@@ -175,3 +175,6 @@ elif page == "Service Requests":
             service_requests_by_day_customer = service_requests_data.groupby([service_requests_data['date'].dt.date, 'customer']).size().unstack().fillna(0)
             st.subheader("Comparativa por Día y Cliente")
             st.bar_chart(service_requests_by_day_customer)
+            
+            
+            
