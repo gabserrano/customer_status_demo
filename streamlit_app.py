@@ -20,7 +20,7 @@ def load_excel(file):
 def get_customer_data(xls):
     df = pd.read_excel(xls, sheet_name='customer_data')
     customer_info = df.iloc[0]  # Asumiendo que la primera fila contiene los datos requeridos
-    return customer_info
+    return df, customer_info
 
 # Función para obtener los datos de la línea de tiempo
 def get_timeline_data(xls):
@@ -66,7 +66,7 @@ if page == "Status":
     if uploaded_file:
         xls = load_excel(uploaded_file)
         if xls:
-            customer_info = get_customer_data(xls)
+            customer_data, customer_info = get_customer_data(xls)
             
             # Sección de Datos del Cliente
             st.subheader("Datos del Cliente")
@@ -95,7 +95,18 @@ if page == "Status":
             csat = customer_info['Last CSAT']
             csat_color = "red" if csat < 3 else "orange" if csat < 4 else "green"
             st.markdown(f"<p style='color: {csat_color};'>**Last CSAT:** {csat}</p>", unsafe_allow_html=True)
-
+            
+            # Sección del Mapa usando lat y long del customer info
+            if 'lat' in customer_info and 'long' in customer_info:
+                try:
+                    lat = float(customer_info['lat'])
+                    lon = float(customer_info['long'])
+                    map_data = pd.DataFrame({'lat': [lat], 'lon': [lon]})
+                    st.subheader("Customer Location")
+                    st.map(map_data)
+                except ValueError:
+                    st.error("Las coordenadas lat y long deben ser números válidos.")
+                    
             # Sección del Equipo SAP
             st.subheader("SAP Team")
             col1, col2, col3, col4 = st.columns(4)
@@ -125,6 +136,8 @@ if page == "Status":
             fig_csat.update_layout(yaxis_range=[0, 5])
             
             st.plotly_chart(fig_csat)
+
+
 
 elif page == "Service Requests":
     st.title("Service Requests")
