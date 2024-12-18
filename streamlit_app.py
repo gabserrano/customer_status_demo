@@ -1,7 +1,5 @@
 import streamlit as st
 import pandas as pd
-from streamlit_timeline import st_timeline
-from datetime import date, timedelta
 import plotly.express as px
 
 # Función para cargar el archivo Excel y validar las hojas
@@ -24,7 +22,10 @@ def get_customer_data(xls):
     customer_info = df.iloc[0]  # Asumiendo que la primera fila contiene los datos requeridos
     return df, customer_info
 
-
+# Función para obtener los datos de la línea de tiempo
+def get_timeline_data(xls):
+    df = pd.read_excel(xls, sheet_name='timeline')
+    return df
 
 # Función para obtener los datos de CSAT histórico
 def get_csat_data(xls):
@@ -95,68 +96,6 @@ if page == "Status":
             csat_color = "red" if csat < 3 else "orange" if csat < 4 else "green"
             st.markdown(f"<p style='color: {csat_color};'>**Last CSAT:** {csat}</p>", unsafe_allow_html=True)
             
-           # Timeline
-            dfDatos = pd.DataFrame({"start":[None],"end":[None],'title':[None],"content":[None],"color":[None],"textcolor":[None],"type":[None]})    
-
-            parAltoTimeline = 600
-            parArchivo = load_excel(uploaded_file)
-            if parArchivo is not None:           
-                df = pd.read_excel(parArchivo, sheet_name='timeline', usecols=['start_date', 'finish_date', 'title', 'content'])
-                if len(df) > 0:
-                    df.rename(columns={'start_date': 'start', 'finish_date': 'end'}, inplace=True)
-                    df['start'] = pd.to_datetime(df['start'])
-                    df['end'] = pd.to_datetime(df['end'])
-                    dfDatos = df        
-
-                
-                
-            if len(dfDatos.dropna()) > 0: 
-                items=[]
-                if parArchivo:
-                    dfDatos['start'] = dfDatos['start'].dt.strftime('%Y-%m-%d')
-                    dfDatos['end'] = dfDatos['end'].dt.strftime('%Y-%m-%d')
-                columns = dfDatos.columns
-                item = {}
-                
-                for indice, fila in dfDatos.iterrows():      
-                    item["style"] = ""
-                    for col in columns: 
-                        if fila[col]:
-                            if col == "color":
-                                color = fila["color"]
-                                item["style"] = f"background-color:{color};" + item["style"]
-                            elif col == "textcolor":
-                                color = fila["textcolor"]
-                                item["style"] = f"color:{color};" + item["style"]
-                            elif col == "title":
-                                item["title"] = fila["start"]
-                            elif col == "content":
-                                item["content"] = fila["title"]
-                            else:
-                                item[col] = fila[col]                    
-                    item["id"] = indice
-                    items.append(item)
-                    item = {}
-                FechaMin = (pd.to_datetime(dfDatos["start"]).min() + timedelta(days=-365)).strftime('%Y-%m-%d')
-                FechaMax = (pd.to_datetime(dfDatos["start"]).max() + timedelta(days=365)).strftime('%Y-%m-%d')
-
-
-                c1, c2 = st.columns([8,2])
-                with c1:
-                    timeline = st_timeline(items, groups=[], options={"min":FechaMin,"max":FechaMax,"align":"left"}, height=f"{parAltoTimeline}px", width="100%")            
-                with c2:
-                    if timeline:
-                        dfEvento = dfDatos.iloc[timeline["id"]]
-                        detalleEvento = f"""
-                                        #### {dfEvento['title']}
-                                        **Fecha**: {dfEvento['start']}\n\n
-                                        {dfEvento['content']}
-                        """
-                        st.write(detalleEvento, unsafe_allow_html=True)
-            
-
-
-           
            # Sección del Mapa usando lat y long del customer info con zoom=2
             if 'lat' in customer_info and 'long' in customer_info:
                 try:
@@ -180,6 +119,14 @@ if page == "Status":
             with col4:
                 st.write(f"**PL:** {customer_info['PL']}")
 
+            # Sección de la Línea de Tiempo usando Plotly
+            timeline_data = get_timeline_data(xls)
+            st.subheader("Timeline")
+            
+            fig_timeline = px.line(timeline_data, x='Date', y='Event', markers=True, title='Timeline')
+            fig_timeline.update_layout(xaxis_title='Date', yaxis_title='Event')
+            
+            st.plotly_chart(fig_timeline)
 
             # Sección de CSAT Histórico usando Plotly
             csat_data = get_csat_data(xls)
@@ -189,8 +136,6 @@ if page == "Status":
             fig_csat.update_layout(yaxis_range=[0, 5])
             
             st.plotly_chart(fig_csat)
-
-
 
 elif page == "Service Requests":
     st.title("Service Requests")
@@ -228,5 +173,4 @@ elif page == "Service Requests":
             service_requests_by_day_customer = service_requests_data.groupby([service_requests_data['date'].dt.date, 'customer']).size().unstack().fillna(0)
             st.subheader("Comparativa por Día y Cliente")
             st.bar_chart(service_requests_by_day_customer)
-          
-                      
+            
