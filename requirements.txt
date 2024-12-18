@@ -1,6 +1,5 @@
-streamlit
-pandas
-numpy
-openpyxl
-plotly
-streamlit-vis-timeline>0.2.0
+pandas==2.2.3
+plotly==5.24.1
+streamlit==1.37.1
+streamlit_timeline==0.0.2
+streamlit_vis_timeline==0.3.0
